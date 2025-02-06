@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div>
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="add">
+    </form>
+</div>
+<hr>
+<ul>
+    {% for rec in object_list %}
+    <li class="border">
+        {% if rec.notes %}
+        <p>
+            {{rec.notes}}
+        </p>
+        {% endif %}
+        <div class="border">
+            <h6>
+                <a href="{{rec.url}}">
+                    {{rec.title}} 
+                </a>
+                <small>
+                    by 
+                    {{rec.author}}
+                </small>
+            </h6>
+            <small>
+                {{rec.word_count}} words
+            </small>
+            <p>
+                {{rec.summary}}
+            </p>
+        </div>
+    </li>
+    <br>
+    {% endfor %}
+</ul>
+
+
+  
+
+{% endblock %}
