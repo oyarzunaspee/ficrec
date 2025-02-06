@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bootstrap5',
-    'main'
+    'main',
+    'users'
 ]
 
 MIDDLEWARE = [
@@ -122,3 +123,5 @@ USE_TZ = True
 
 STATIC_URL = 'main/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'main/static')
+
+LOGIN_URL = 'login'

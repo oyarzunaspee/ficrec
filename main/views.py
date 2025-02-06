@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 
 class NewCollectionView(CreateView):
     model = Collection
-    fields = ["name", "about"]
+    fields = ["name"]
     template_name = "new_collection.html"
 
     def form_valid(self, form):
@@ -35,28 +35,32 @@ class RecListView(ListView, FormView):
         url = form.data['url']
         notes = form.data['notes']
 
-        fic_data = self.scrap_fic(url)
+        get_url = requests.get(url)
+        if int(get_url.status_code) == 200:
+            fic_data = self.scrap_fic(get_url)
 
-        collection_pk = self.kwargs['pk']
-        get_collection = get_object_or_404(Collection, pk=collection_pk)
+            collection_pk = self.kwargs['pk']
+            get_collection = get_object_or_404(Collection, pk=collection_pk)
 
-        self.model.objects.create(
-            collection = get_collection,
-            title = fic_data["title"],
-            author = fic_data["author"],
-            word_count = int(fic_data["word_count"]),
-            summary = fic_data["summary"],
-            url = url,
-            notes = notes
-        )
-        return super().form_valid(form)
+            self.model.objects.create(
+                collection = get_collection,
+                title = fic_data["title"],
+                author = fic_data["author"],
+                word_count = int(fic_data["word_count"]),
+                summary = fic_data["summary"],
+                url = url,
+                notes = notes
+            )
+            return super().form_valid(form)
+        else:
+            super().form_valid(form)
 
     def get_success_url(self):
         collection = int(self.kwargs["pk"])
         return reverse_lazy("rec_list", args=[collection])
     
-    def scrap_fic(self, url):
-        get_url = requests.get(url)
+    def scrap_fic(self, get_url):
+        
         souped_page = BeautifulSoup(get_url.content, 'html.parser')
         preface = souped_page.find("div", {"class": "preface"})
         title = preface.find("h2").get_text()
