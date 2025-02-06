@@ -35,19 +35,30 @@ class RecListView(ListView, FormView):
 
         collection_pk = self.kwargs['pk']
         collection = get_object_or_404(Collection, pk=collection_pk)
+        
+        share_code = BeautifulSoup(form.data["share"], 'html.parser')
+        links = share_code.find_all("a")
+        url = links[0]["href"]
+        title = links[0].find("strong").get_text()
+        author = links[1].find("strong").get_text()
+        word_count = share_code.find('a').next_sibling.string[2:-10]
+
+        summary = share_code.find("p").get_text()
+
         self.model.objects.create(
                     collection = collection,
-                    title = form.data["title"],
-                    author = form.data["author"],
-                    word_count = form.data["word_count"],
-                    summary = form.data["summary"],
-                    url = form.data["url"],
+                    title = title,
+                    author = author,
+                    word_count = int(word_count),
+                    summary = summary,
+                    url = url,
                     notes = form.data["notes"]
                 )
-        """
-        AO3 doesn't allow web scraping 
-        try:
-            get_url = requests.get(url)
+
+        
+
+        """try:
+            get_url = requests.get(form.data["url"])
             print(get_url.status_code)
             if int(get_url.status_code) == 200:
                 fic_data = self.scrap_fic(get_url)
@@ -61,8 +72,8 @@ class RecListView(ListView, FormView):
                     author = fic_data["author"],
                     word_count = int(fic_data["word_count"]),
                     summary = fic_data["summary"],
-                    url = url,
-                    notes = notes
+                    url = form.data["url"],
+                    notes = form.data["notes"]
                 )
                 return super().form_valid(form)
         except:
@@ -71,7 +82,6 @@ class RecListView(ListView, FormView):
 
     def get_success_url(self):
         collection = int(self.kwargs["pk"])
-        print(collection)
         return reverse_lazy("rec_list", args=[collection])
     
     def scrap_fic(self, get_url):
