@@ -4,6 +4,8 @@ from django.views.generic.edit import CreateView, FormView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 from django.shortcuts import get_object_or_404
 
@@ -35,7 +37,13 @@ class RecListView(ListView, FormView):
         url = form.data['url']
         notes = form.data['notes']
 
-        get_url = requests.get(url)
+        session = requests.Session()
+        retry = Retry(connect=3, backoff_factor=0.5)
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+
+        get_url = session.get(url)
         if int(get_url.status_code) == 200:
             fic_data = self.scrap_fic(get_url)
 
