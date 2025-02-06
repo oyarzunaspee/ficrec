@@ -4,8 +4,6 @@ from django.views.generic.edit import CreateView, FormView
 from django.views.generic import ListView
 from django.urls import reverse_lazy
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 from django.shortcuts import get_object_or_404
 
@@ -34,37 +32,46 @@ class RecListView(ListView, FormView):
         return context
     
     def form_valid(self, form):
-        url = form.data['url']
-        notes = form.data['notes']
 
-        session = requests.Session()
-        retry = Retry(connect=3, backoff_factor=0.5)
-        adapter = HTTPAdapter(max_retries=retry)
-        session.mount('http://', adapter)
-        session.mount('https://', adapter)
+        collection_pk = self.kwargs['pk']
+        collection = get_object_or_404(Collection, pk=collection_pk)
+        self.model.objects.create(
+                    collection = collection,
+                    title = form.data["title"],
+                    author = form.data["author"],
+                    word_count = form.data["word_count"],
+                    summary = form.data["summary"],
+                    url = form.data["url"],
+                    notes = form.data["notes"]
+                )
+        """
+        AO3 doesn't allow web scraping 
+        try:
+            get_url = requests.get(url)
+            print(get_url.status_code)
+            if int(get_url.status_code) == 200:
+                fic_data = self.scrap_fic(get_url)
 
-        get_url = session.get(url)
-        if int(get_url.status_code) == 200:
-            fic_data = self.scrap_fic(get_url)
+                collection_pk = self.kwargs['pk']
+                get_collection = get_object_or_404(Collection, pk=collection_pk)
 
-            collection_pk = self.kwargs['pk']
-            get_collection = get_object_or_404(Collection, pk=collection_pk)
-
-            self.model.objects.create(
-                collection = get_collection,
-                title = fic_data["title"],
-                author = fic_data["author"],
-                word_count = int(fic_data["word_count"]),
-                summary = fic_data["summary"],
-                url = url,
-                notes = notes
-            )
-            return super().form_valid(form)
-        else:
-            super().form_valid(form)
+                self.model.objects.create(
+                    collection = get_collection,
+                    title = fic_data["title"],
+                    author = fic_data["author"],
+                    word_count = int(fic_data["word_count"]),
+                    summary = fic_data["summary"],
+                    url = url,
+                    notes = notes
+                )
+                return super().form_valid(form)
+        except:
+            super().form_valid(form)"""
+        return super().form_valid(form)
 
     def get_success_url(self):
         collection = int(self.kwargs["pk"])
+        print(collection)
         return reverse_lazy("rec_list", args=[collection])
     
     def scrap_fic(self, get_url):
